@@ -2,7 +2,7 @@ from flask import Flask,request
 from fooddb.MongoUtilis import  MongoDBConnection
 
 
-mycoll =  MongoDBConnection('rocketRecipeDB','food-items','mongodb+srv://sowmya:<sowmya@10>@cluster0.djvqvtj.mongodb.net/?retryWrites=true&w=majority').create_connection()
+mycoll =  MongoDBConnection('rocketRecipeDB','food-items','mongodb+srv://test:test123@cluster0.djvqvtj.mongodb.net/?retryWrites=true&w=majority').create_connection()
 
 app = Flask(__name__)
 
@@ -21,50 +21,68 @@ def greet():
 def get_food_item(id):
     if mycoll is not None:
         data = mycoll.find_one(id)
-        return data
-    return f'no items found'
+        if data :
+           return data
+        else:
+           return  {}
+    return f'service is not available,please try again'
 
-
-@app.get('/api/food/')
+@app.get('/api/foods/')
 def get_food_items():
     if mycoll is not None:
         data = mycoll.find()
-        return data
-    return f'no items found'
+        if data:
+            return [item for item in data]
+        else:
+            return []
+    return f'service is not available,please try again'
 
 @app.post('/api/food/')
 def save_food_item():
     if mycoll is not None:
         data = request.json
         response = mycoll.insert_one(data)
-        return f' data inserted successfully :{response.acknowledged} {response.inserted_id}'
-    return f'Service is not avaiable....'
+        if response.acknowledged:
+           return f' Data inserted successfully :  {response.inserted_id}'
+        else:
+           return f'Unable to insert data '
+    return f'service is not available,please try again'
 
 @app.post('/api/foods/')
 def save_food_items():
     if mycoll is not None:
         data = request.json
         response = mycoll.insert_many(data)
-        return f' data inserted successfully : {response.acknowledged} {response.inserted_ids}'
-    return f'Service is not avaiable....'
+        if response.acknowledged:
+           return f' Data inserted successfully :  {response.inserted_ids}'
+        else:
+            return 'Unable to insert data '
+    return f'service is not available,please try again'
 
 @app.put('/api/food/<int:id>')
 def update_food_item(id):
     if mycoll is not None:
         data = request.json
         response= mycoll.update_one({'_id':id},{'$set':data})
-        return f'data updated sucessfully'
+        if response.acknowledged:
+           return f'Data updated sucessfully {id}'
+        else:
+            return f'Unable to update data of {id}'
     else:
-        return f'no data updated'
+        return f'service is not available,please try again'
+
 
 
 @app.delete('/api/food/<int:id>')
 def delete_food_item(id):
     if mycoll is not None:
-        response=mycoll.delete_one(id)
-        return f'data deleted and {response.status}'
+        response=mycoll.delete_one({"_id":id})
+        if response.acknowledged:
+           return f'data deleted of {id} and it is {response.acknowledged}'        
+        else:
+           return f'Unable to delete data of {id}'
     else:
-        return f'no data deleted'
+        return f'service is not available,please try again'
 
 if __name__ == '__main__':
     # create db connection..
